@@ -1978,6 +1978,7 @@
     ;; Cog convergence params
     (centroid-thre 1.0) (target-centroid-pos) (centroid-offset-func) (cog-translation-axis :z) (cog-null-space nil) (cog-gain 1.0)
     (min-loop (/ stop 10))
+    (minimum-manipulability 0.0)
     debug-view ik-args
     &allow-other-keys)
    ":inverse-kinematics-loop is one loop calculation for :inverse-kinematics.
@@ -2048,6 +2049,9 @@
                              :rotation-axis rotation-axis
                              :move-target move-target
                              method-args)))
+       (when (not (eps>= (manipulability jacobi) minimum-manipulability 10e-6))
+	 (return-from :inverse-kinematics-loop :ik-failed)
+	 )
        (when (and debug-view (not (memq :no-message debug-view)))
          (warn "loop: ~3d~%" loop)
          (warn "union-link-list: ~A~%" (send-all union-link-list :name))
@@ -2194,6 +2198,7 @@
 		  (dump-command :fail-only) (periodic-time 0.5) ;; [s]
                   (check-collision)
                   (additional-jacobi) (additional-vel)
+		  (minimum-manipulability 0.0)
 		  &allow-other-keys)
    "Move move-target to target-coords.
     dump-command should be t, nil, :always, :fail-only, :always-with-debug-log, or :fail-only-with-debug-log.
@@ -2313,17 +2318,20 @@
                               :target-coords target-coords
                               :periodic-time periodic-time
                               :stop stop :loop loop
-                              :rotation-axis rotation-axis
-                              :translation-axis translation-axis
+                              :rotation-axis rotation-axis                              :translation-axis translation-axis
                               :move-target move-target
                               :union-link-list union-link-list
                               :thre thre :rthre rthre
                               :additional-jacobi additional-jacobi
                               :additional-vel additional-vel
+			      :minimum-manipulability minimum-manipulability
                               :debug-view debug-view
                               :ik-args ik-args args))
          (when (eq success :ik-succeed)
 	   (setq success t) (return nil))
+	 (when (eq success :ik-failed)
+	   (setq success nil)
+	   (return nil))
          ))
      (if target-centroid-pos (send self :update-mass-properties))
      (let* ((target-coords
