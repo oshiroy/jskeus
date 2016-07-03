@@ -2194,6 +2194,7 @@
 		  (dump-command :fail-only) (periodic-time 0.5) ;; [s]
                   (check-collision)
                   (additional-jacobi) (additional-vel)
+                  (return-diff-if-fail nil)
 		  &allow-other-keys)
    "Move move-target to target-coords.
     dump-command should be t, nil, :always, :fail-only, :always-with-debug-log, or :fail-only-with-debug-log.
@@ -2479,7 +2480,11 @@
 	       (remove-duplicates
 		(append (send-all union-link-list :joint) joint-list)) av0)
          (if c0 (send self :newcoords c0))
-	 nil))
+	 (if return-diff-if-fail
+             (list dif-pos dif-rot)
+           nil
+           )
+         ))
      ))
   (:ik-convergence-check
    (success dif-pos dif-rot
